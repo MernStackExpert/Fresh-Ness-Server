@@ -4,7 +4,6 @@ const express = require("express");
 const cors = require("cors");
 
 const productRoutes = require("./routes/product.routes");
-const { initCollection } = require("./config/collections");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -14,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // routes
-app.use("/products", productRoutes);
+app.use("/products" , productRoutes)
 
 app.get("/", (req, res) => {
   res.send("E-commerce server running 🚀");
