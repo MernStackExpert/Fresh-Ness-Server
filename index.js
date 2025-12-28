@@ -1,11 +1,26 @@
-const express = require('express')
-const app = express()
-const port = 3000
+// index.js
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+const productRoutes = require("./routes/product.routes");
+const { initCollection } = require("./config/collections");
+
+const app = express();
+const port = process.env.PORT || 5000;
+
+// middleware
+app.use(cors());
+app.use(express.json());
+
+// routes
+app.use("/products", productRoutes);
+
+app.get("/", (req, res) => {
+  res.send("E-commerce server running 🚀");
+});
+
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+  console.log(`🚀 Server running on port ${port}`);
+});

@@ -1,2 +1,32 @@
-node_modules
+# Node modules (সবসময় ignore)
+node_modules/
+
+# Env files (secret keys)
 .env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor files
+.vscode/
+.idea/
+
+# Firebase (local)
+firebase-debug.log
+.firebaserc
+
+# Build folders (optional, frontend)
+dist/
+build/
+
+# Optional: Temporary files
+*.tmp
+*.bak
