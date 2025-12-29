@@ -1,4 +1,5 @@
 const { connectDB, ObjectId } = require("../config/db");
+const sendOrderEmail = require("../utils/sendOrderEmail");
 
 const collection = async () => {
   const db = await connectDB();
@@ -45,16 +46,77 @@ const createOrders = async (req, res) => {
   try {
     const ordersCollection = await collection();
 
-    const orders = {
-      ...req.body,
+    const {
+      email,
+      products,
+      total,
+      paymentMethod,
+      shippingAddress,
+      transactionId,
+    } = req.body;
+
+    // 🔐 validation
+    if (!email || !products || products.length === 0 || !total) {
+      return res.status(400).send({ message: "Invalid order data" });
+    }
+
+    const order = {
+      userId: req.user ? req.user._id : null,
+      email,
+      products,
+      total,
+      paymentMethod,
+      paymentStatus: paymentMethod === "COD" ? "pending" : "paid",
+      transactionId: paymentMethod !== "COD" ? transactionId : null,
+      orderStatus: "pending",
+      shippingAddress,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    const result = await ordersCollection.insertOne(orders);
-    res.status(201).send(result);
+    const result = await ordersCollection.insertOne(order);
+
+    // 📧 order confirmation email
+    const html = `
+  <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+    <h2 style="color: #4CAF50;">Thanks for your order!</h2>
+    <p><b>Order ID:</b> ${result.insertedId}</p>
+    
+    ${
+      transactionId
+        ? `<p style="background: #f4f4f4; padding: 10px;"><b>Transaction ID:</b> ${transactionId}</p>`
+        : ""
+    }
+    
+    <p><b>Total Amount:</b> $${total}</p>
+    <hr />
+    <h3>Product Details:</h3>
+    <ul>
+      ${products
+        .map(
+          (p) => `<li>${p.name} × ${p.quantity} = $${p.price * p.quantity}</li>`
+        )
+        .join("")}
+    </ul>
+    <p>Status: <b>${
+      paymentMethod === "COD" ? "To be paid on delivery" : "Paid"
+    }</b></p>
+  </div>
+`;
+
+    await sendOrderEmail({
+      to: email,
+      subject: "Order Confirmation",
+      html,
+    });
+
+    res.status(201).send({
+      message: "Order created successfully",
+      orderId: result.insertedId,
+    });
   } catch (error) {
-    res.status(500).send({ message: "Failed to create Order", error });
+    console.error(error);
+    res.status(500).send({ message: "Failed to create order" });
   }
 };
 
@@ -65,8 +127,14 @@ const updateOrder = async (req, res) => {
     const id = req.params.id;
     const result = await ordersCollection.updateOne(
       { _id: new ObjectId(id) },
-      { $set: { ...req.body }, updatedAt: new Date() }
+      {
+        $set: {
+          ...req.body,
+          updatedAt: new Date(),
+        },
+      }
     );
+
     if (result.matchedCount === 0) {
       return res.status(404).send({ message: "Product Not Found" });
     }
@@ -77,20 +145,20 @@ const updateOrder = async (req, res) => {
   }
 };
 
-const deleteOrder = async (req , res) => {
+const deleteOrder = async (req, res) => {
   try {
-      const ordersCollection = await collection();
-      const id = req.params.id;
-      const result = await ordersCollection.deleteOne({ _id: new ObjectId(id) });
-  
-      if (result.deletedCount === 0) {
-        return res.status(404).send({ message: "Orders Not Found" });
-      }
-  
-      res.send({ message: "Orders deleted successfully", result });
-    } catch (error) {
-      res.status(500).send({ message: "Failed to delete Orders", error });
-    }
-}
+    const ordersCollection = await collection();
+    const id = req.params.id;
+    const result = await ordersCollection.deleteOne({ _id: new ObjectId(id) });
 
-module.exports = { getOrders, createOrders , updateOrder , deleteOrder};
+    if (result.deletedCount === 0) {
+      return res.status(404).send({ message: "Orders Not Found" });
+    }
+
+    res.send({ message: "Orders deleted successfully", result });
+  } catch (error) {
+    res.status(500).send({ message: "Failed to delete Orders", error });
+  }
+};
+
+module.exports = { getOrders, createOrders, updateOrder, deleteOrder };
