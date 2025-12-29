@@ -4,9 +4,11 @@ const express = require("express");
 const cors = require("cors");
 
 const productRoutes = require("./routes/product.routes");
+const userRoutes = require("./routes/users.routes");
+const orderRoutes = require("./routes/users.routes");
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3000;
 
 // middleware
 app.use(cors());
@@ -14,6 +16,8 @@ app.use(express.json());
 
 // routes
 app.use("/products" , productRoutes)
+app.use("/users", userRoutes);
+app.use("/orders", orderRoutes)
 
 app.get("/", (req, res) => {
   res.send("E-commerce server running 🚀");

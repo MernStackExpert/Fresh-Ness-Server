@@ -65,6 +65,27 @@ const getAllProducts = async (req, res) => {
   }
 };
 
+const singleProduct = async (req, res) => {
+  try {
+    const productCollection = await collection();
+    const id = req.params.id;
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ message: "Invalid product id" });
+    }
+    const product = await productCollection.findOne({ _id: new ObjectId(id) });
+    if (!product) {
+      return res.status(404).send({ message: "Product not found" });
+    }
+
+    res.send(product);
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed to fetch product",
+      error,
+    });
+  }
+};
+
 const createProduct = async (req, res) => {
   try {
     const productCollection = await collection();
@@ -126,4 +147,5 @@ module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
+  singleProduct,
 };
