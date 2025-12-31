@@ -17,7 +17,7 @@ const getAllProducts = async (req, res) => {
 
     //Search filter
     if (req.query.search) {
-      query.name = { $regex: req.query.search, $option: "i" };
+      query.name = { $regex: req.query.search, $options: "i" };
     }
 
     //Price range filter
