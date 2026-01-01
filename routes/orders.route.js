@@ -4,7 +4,7 @@ const verifyAdminOrManager = require('../middleware/verifyAdminOrManager');
 const router = express.Router();
 
 router.get('/', getOrders);           
-router.post('/', verifyAdminOrManager, createOrders);       
+router.post('/', createOrders);       
 router.patch('/:id', verifyAdminOrManager, updateOrder);    
 router.delete('/:id', verifyAdminOrManager, deleteOrder);  
 

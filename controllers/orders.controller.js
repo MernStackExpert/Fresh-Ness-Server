@@ -15,7 +15,6 @@ const getOrders = async (req, res) => {
       query.email = req.query.email;
     }
 
-    // Ensure page and limit are numbers
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
@@ -35,10 +34,10 @@ const getOrders = async (req, res) => {
       orders,
     });
   } catch (error) {
-    // Logging the error is helpful for debugging
-    res
-      .status(500)
-      .send({ message: "Failed to fetch orders", error: error.message });
+    res.status(500).send({ 
+      message: "Failed to fetch orders", 
+      error: error.message 
+    });
   }
 };
 
@@ -55,7 +54,6 @@ const createOrders = async (req, res) => {
       transactionId,
     } = req.body;
 
-    // 🔐 validation
     if (!email || !products || products.length === 0 || !total) {
       return res.status(400).send({ message: "Invalid order data" });
     }
@@ -76,46 +74,37 @@ const createOrders = async (req, res) => {
 
     const result = await ordersCollection.insertOne(order);
 
-    // 📧 order confirmation email
     const html = `
-  <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-    <h2 style="color: #4CAF50;">Thanks for your order!</h2>
-    <p><b>Order ID:</b> ${result.insertedId}</p>
-    
-    ${
-      transactionId
-        ? `<p style="background: #f4f4f4; padding: 10px;"><b>Transaction ID:</b> ${transactionId}</p>`
-        : ""
-    }
-    
-    <p><b>Total Amount:</b> $${total}</p>
-    <hr />
-    <h3>Product Details:</h3>
-    <ul>
-      ${products
-        .map(
-          (p) => `<li>${p.name} × ${p.quantity} = $${p.price * p.quantity}</li>`
-        )
-        .join("")}
-    </ul>
-    <p>Status: <b>${
-      paymentMethod === "COD" ? "To be paid on delivery" : "Paid"
-    }</b></p>
-  </div>
-`;
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <h2 style="color: #4CAF50;">Thanks for your order!</h2>
+        <p><b>Order ID:</b> ${result.insertedId}</p>
+        ${transactionId ? `<p style="background: #f4f4f4; padding: 10px;"><b>Transaction ID:</b> ${transactionId}</p>` : ""}
+        <p><b>Total Amount:</b> $${total}</p>
+        <hr />
+        <h3>Product Details:</h3>
+        <ul>
+          ${products.map((p) => `<li>${p.name} × ${p.quantity} = $${p.price * p.quantity}</li>`).join("")}
+        </ul>
+        <p>Status: <b>${paymentMethod === "COD" ? "To be paid on delivery" : "Paid"}</b></p>
+      </div>
+    `;
 
-    await sendOrderEmail({
-      to: email,
-      subject: "Order Confirmation",
-      html,
-    });
+    try {
+      await sendOrderEmail({
+        to: email,
+        subject: "Order Confirmation",
+        html,
+      });
+    } catch (emailError) {
+      console.error("Email Service Error:", emailError.message);
+    }
 
     res.status(201).send({
       message: "Order created successfully",
       orderId: result.insertedId,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Order Creation Error:", error);
     res.status(500).send({ message: "Failed to create order" });
   }
 };
@@ -123,7 +112,6 @@ const createOrders = async (req, res) => {
 const updateOrder = async (req, res) => {
   try {
     const ordersCollection = await collection();
-
     const id = req.params.id;
     const result = await ordersCollection.updateOne(
       { _id: new ObjectId(id) },
@@ -136,12 +124,12 @@ const updateOrder = async (req, res) => {
     );
 
     if (result.matchedCount === 0) {
-      return res.status(404).send({ message: "Product Not Found" });
+      return res.status(404).send({ message: "Order Not Found" });
     }
 
-    res.send({ message: "Product updated successfully", result });
+    res.send({ message: "Order updated successfully", result });
   } catch (error) {
-    res.status(500).send({ message: "Failed to update product", error });
+    res.status(500).send({ message: "Failed to update order", error });
   }
 };
 
@@ -152,12 +140,12 @@ const deleteOrder = async (req, res) => {
     const result = await ordersCollection.deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {
-      return res.status(404).send({ message: "Orders Not Found" });
+      return res.status(404).send({ message: "Order Not Found" });
     }
 
-    res.send({ message: "Orders deleted successfully", result });
+    res.send({ message: "Order deleted successfully", result });
   } catch (error) {
-    res.status(500).send({ message: "Failed to delete Orders", error });
+    res.status(500).send({ message: "Failed to delete order", error });
   }
 };
 
