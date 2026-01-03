@@ -4,7 +4,7 @@ const verifyAdminOrManager = async (req, res, next) => {
   const db = await connectDB();
   const users = db.collection("users");
 
-  const user = await users.findOne({ uid: req.user.uid });
+  const user = await users.findOne({ email: req.user.email });
 
   if (!user || !["admin", "manager"].includes(user.role)) {
     return res

@@ -41,6 +41,27 @@ const getOrders = async (req, res) => {
   }
 };
 
+const getSingleOrder = async (req , res) => {
+  try {
+    const ordersCollection = await collection();
+    const id = req.params.id;
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ message: "Invalid orders id" });
+    }
+    const orders = await ordersCollection.findOne({ _id: new ObjectId(id) });
+    if (!orders) {
+      return res.status(404).send({ message: "orders not found" });
+    }
+
+    res.send(orders);
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed to fetch orders",
+      error,
+    });
+  }
+}
+
 const createOrders = async (req, res) => {
   try {
     const ordersCollection = await collection();
@@ -149,4 +170,4 @@ const deleteOrder = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, createOrders, updateOrder, deleteOrder };
+module.exports = { getOrders, createOrders, updateOrder, deleteOrder , getSingleOrder };
